@@ -13,13 +13,13 @@ const card = useShoppStore()
     <div class="w-2/3 py-6 flex flex-col justify-center items-start gap-6">
       <!-- Header -->
       <div class="w-full flex justify-between items-center">
-        <h1 class="text-xl font-semibold text-gray-800">កន្ត្រកទំនិញ</h1>
+        <h1 class="text-xl font-semibold text-gray-800 font-poppins">Favorite</h1>
         <button
           @click="$router.push({ name: 'home' })"
           class="px-4 py-2 flex justify-center items-center gap-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 cursor-pointer transition"
         >
           <component :is="BackIcon" />
-          <span>ត្រឡប់ទៅទំព័រដើម</span>
+          <span>Back</span>
         </button>
       </div>
 
@@ -33,7 +33,7 @@ const card = useShoppStore()
 
         <!-- data is empty -->
         <div
-          class="w-full flex justify-center items-center p-4"
+          class="w-full flex justify-center items-center p-4 "
           v-if="!card.favoriteProducts.length"
         >
           <p>No foods available.</p>

@@ -45,7 +45,7 @@ export const useShoppStore = defineStore('shopp', {
     data: null as FoodModelResponseAPI | null,
     isLoading: false,
     search: '',
-    products: loadFromStorage<CartProduct>('cart'),
+    products: loadFromStorage<CartProduct>('cart') || null,
     favoriteProducts: loadFromStorage<any>('favorite'),
     recepts: loadFromStorage<any>('recepts'),
     showCategoryDropdown: false,
@@ -155,27 +155,8 @@ export const useShoppStore = defineStore('shopp', {
     },
 
     // Block order payemtn
-    async placeOrder(_payload: any, method: string) {
-      this.errors.table_id = ''
-      if (!this.formData.table_id) {
-        this.errors.table_id = 'សូមជ្រើសរើសតុ'
-        return
-      }
-      // check validate
-      console.log('this --------- ' + method)
-      // check method
-      if (method !== 'payway') {
-        // post order
-      } else {
-        // we need pay way success that post order
-        try {
-          const res = await order_provider.checkOut(_payload)
-          // console.log(res)
-          this.qr_code = res.data
-        } catch (error: any) {
-          console.log(error)
-        }
-      }
+    async placeOrder(_payload: any) {
+      return await order_provider.createOrder(_payload)
     },
 
     async createOrder(_payload: any) {

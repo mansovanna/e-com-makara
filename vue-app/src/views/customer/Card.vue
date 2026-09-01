@@ -36,13 +36,13 @@ const selectedTotal = computed(() => selectedSubtotal.value + cart.deliveryFee)
     <div class="w-full max-w-6xl mx-auto py-6 px-4 flex flex-col gap-6">
       <!-- Header -->
       <div class="w-full flex justify-between items-center">
-        <h1 class="text-xl font-semibold text-gray-800">កន្ត្រកទំនិញ</h1>
+        <h1 class="text-xl font-semibold text-gray-800">Cart</h1>
         <button
           @click="router.push({ name: 'home' })"
           class="px-4 py-2 flex justify-center items-center gap-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 cursor-pointer transition"
         >
           <component :is="BackIcon" />
-          <span>ត្រឡប់ទៅទំព័រដើម</span>
+          <span>Back</span>
         </button>
       </div>
 
@@ -51,10 +51,10 @@ const selectedTotal = computed(() => selectedSubtotal.value + cart.deliveryFee)
         v-if="cart.products.length === 0"
         class="w-full flex flex-col items-center justify-center py-24 gap-4 bg-white rounded-lg shadow-sm"
       >
-        <p class="text-gray-400 text-lg">មិនទាន់មានទំនិញនៅក្នុងកន្ត្រកទេ</p>
+        <p class="text-gray-400 text-lg font-hanuman">មិនទាន់មានទំនិញនៅក្នុងកន្ត្រកទេ</p>
         <button
           @click="router.push({ name: 'home' })"
-          class="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition"
+          class="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition font-hanuman"
         >
           ជ្រើសរើសទំនិញ
         </button>
@@ -74,7 +74,7 @@ const selectedTotal = computed(() => selectedSubtotal.value + cart.deliveryFee)
               type="checkbox"
               class="w-5 h-5 accent-orange-500 cursor-pointer"
             />
-            <span class="text-gray-700 font-medium"
+            <span class="text-gray-700 font-medium font-hanuman"
               >ជ្រើសរើសទាំងអស់ ({{ cart.products.length }})</span
             >
           </div>
@@ -142,22 +142,22 @@ const selectedTotal = computed(() => selectedSubtotal.value + cart.deliveryFee)
           <div
             class="bg-white rounded-lg border border-orange-500 p-5 flex flex-col gap-4 sticky top-6"
           >
-            <h3 class="font-semibold text-gray-800 border-b pb-3">សរុបការកម្មង់</h3>
+            <h3 class="font-semibold text-gray-800 border-b pb-3 font-hanuman">សរុបការកម្មង់</h3>
 
-            <div class="flex justify-between text-sm text-gray-600">
+            <div class="flex justify-between text-sm text-gray-600 font-hanuman">
               <span>ទំនិញបានជ្រើស</span>
               <span>{{ selectedItems.length }}</span>
             </div>
-            <div class="flex justify-between text-sm text-gray-600">
+            <div class="flex justify-between text-sm text-gray-600 font-hanuman">
               <span>តម្លៃទំនិញ</span>
               <span>${{ selectedSubtotal.toFixed(2) }}</span>
             </div>
-            <div class="flex justify-between text-sm text-gray-600">
+            <div class="flex justify-between text-sm text-gray-600 font-hanuman">
               <span>ថ្លៃដឹកជញ្ជូន</span>
               <span>${{ cart.deliveryFee.toFixed(2) }}</span>
             </div>
 
-            <div class="flex justify-between font-semibold text-gray-800 border-t pt-3">
+            <div class="flex justify-between font-semibold text-gray-800 border-t pt-3 font-hanuman">
               <span>សរុប</span>
               <span class="text-orange-500">${{ selectedTotal.toFixed(2) }}</span>
             </div>
@@ -171,7 +171,7 @@ const selectedTotal = computed(() => selectedSubtotal.value + cart.deliveryFee)
                 })
               "
               :class="[
-                'w-full py-3 rounded-md font-medium transition',
+                'w-full py-2 rounded-md font-medium transition font-hanuman',
                 selectedItems.length > 0
                   ? 'bg-orange-500 text-white hover:bg-orange-600 cursor-pointer'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed',

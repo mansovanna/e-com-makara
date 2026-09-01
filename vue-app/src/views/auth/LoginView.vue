@@ -94,6 +94,13 @@ const submitForm = () => {
           Please check and complete all required fields
         </h1>
 
+        <p
+          v-if="authStore.isMessageError"
+          class="text-red-500 text-xs p-1 bg-red-500/10 rounded-lg px-4"
+        >
+          {{ authStore.isMessageError }}
+        </p>
+
         <div class="mt-2 w-full font-open-sans">
           <!-- Form -->
           <form class="space-y-2" @submit.prevent="submitForm">

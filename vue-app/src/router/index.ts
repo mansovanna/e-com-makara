@@ -9,8 +9,8 @@ import Card from '@/views/customer/Card.vue'
 import CheckouteView from '@/views/customer/CheckouteView.vue'
 import Favorite from '@/views/customer/Favorite.vue'
 import HomeView from '@/views/customer/HomeView.vue'
-import IndexView from '@/views/customer/IndexView.vue'
 import Notification from '@/views/customer/Notification.vue'
+import OrderItems from '@/views/customer/OrderItems.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -40,6 +40,11 @@ const router = createRouter({
           path: '/card',
           name: 'card',
           component: Card,
+        },
+        {
+          path: '/orders',
+          name: 'orders',
+          component: OrderItems,
         },
         {
           path: '/checkout',
@@ -84,11 +89,7 @@ const router = createRouter({
         },
       ],
     },
-    {
-      path: '/s',
-      name: 'index',
-      component: IndexView,
-    },
+
     {
       path: '/login',
       name: 'login',

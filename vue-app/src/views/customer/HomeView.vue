@@ -20,8 +20,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="w-full flex flex-col items-center justify-start">
-    <div class="w-2/3 max-lg:w-full px-4 py-6 flex flex-col justify-center items-start gap-6">
+  <main class="w-full flex flex-col items-center justify-start font-hanuman">
+    <div class="w-2/3 max-lg:w-full max-xl:w-3/4 px-4 py-6 flex flex-col justify-center items-start gap-6">
       <!--  -->
       <!--  -->
       <img
@@ -89,18 +89,18 @@ onMounted(async () => {
             <div v-for="item in appStore.categories?.data || []" :key="item.id">
               <button
                 @click="setSelection(item.id)"
-                class="pl-1 pr-5 py-1 rounded-full flex justify-center items-center gap-2 text-nowrap cursor-pointer hover:bg-orange-600 hover:text-white duration-500 ease-in-out"
+                class="pl-0.5 pr-5 py-0.5 rounded-full flex justify-center items-center gap-1 text-nowrap cursor-pointer hover:bg-orange-600 hover:text-white duration-500 ease-in-out"
                 :class="
                   isSelectIndex === item.id
                     ? 'bg-linear-65 from-orange-500 to-pink-500 text-white'
                     : 'bg-white border border-orange-500 text-orange-500'
                 "
               >
-                <div class="w-10 h-10">
+                <div class="w-10">
                   <img
                     v-if="item.image"
                     :src="item.image_url"
-                    class="w-10 h-10 object-cover object-center rounded-full"
+                    class="w-8 h-8 object-cover object-center rounded-full"
                   />
                 </div>
                 <span>{{ item.name }}</span>

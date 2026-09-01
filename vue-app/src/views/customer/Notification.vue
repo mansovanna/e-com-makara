@@ -48,17 +48,17 @@ function money(n: number) {
 </script>
 
 <template>
-  <main class="w-full flex flex-col items-center justify-start bg-gray-50">
+  <main class="w-full flex flex-col items-center justify-start ">
     <div class="w-full max-w-3xl px-4 py-6 flex flex-col justify-center items-start gap-6">
       <!-- Header -->
       <div class="w-full flex justify-between items-center">
-        <h1 class="text-xl font-semibold text-gray-800">ព័ត៌មានផ្សេងៗ</h1>
+        <h1 class="text-xl font-semibold text-gray-800 font-hanuman">ព័ត៌មានផ្សេងៗ</h1>
         <button
           @click="$router.push({ name: 'home' })"
           class="px-4 py-2 flex justify-center items-center gap-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 cursor-pointer transition"
         >
           <component :is="BackIcon" />
-          <span>ត្រឡប់ទៅទំព័រដើម</span>
+          <span>Back</span>
         </button>
       </div>
 
@@ -74,7 +74,7 @@ function money(n: number) {
             class="px-5 py-3 bg-orange-50 border-b border-dashed border-orange-300 flex justify-between items-center"
           >
             <div>
-              <p class="text-sm text-gray-500">លេខកម្មង់ / Order No</p>
+              <p class="text-sm text-gray-500 font-hanuman">លេខកម្មង់ / Order No</p>
               <p class="font-semibold text-gray-800">{{ item.order.order_no }}</p>
             </div>
             <span
@@ -150,7 +150,7 @@ function money(n: number) {
           v-if="!sortedReceipts.length"
           class="w-full py-16 flex flex-col items-center justify-center text-gray-400"
         >
-          <p>មិនទាន់មានវិក្កយបត្រនៅឡើយទេ</p>
+          <p class="font-hanuman">មិនទាន់មានវិក្កយបត្រនៅឡើយទេ</p>
         </div>
       </div>
 

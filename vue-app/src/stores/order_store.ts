@@ -23,6 +23,26 @@ export const useOrderStore = defineStore('order', {
       }
     },
 
+     async updateItemStatus(itemId: number, status: string) {
+      try {
+        const res = await order_provider.updateItemStatus(itemId, status)
+        return res.data
+      } catch (error: any) {
+        console.log(error)
+        throw error
+      }
+    },
+
+     async updatePaymentStatus(orderId: number, status: string) {
+      try {
+        const res = await order_provider.updatePaymentStatus(orderId, status)
+        return res.data
+      } catch (error: any) {
+        console.log(error)
+        throw error
+      }
+    },
+
     async updateStatus(id: number, status: string) {
       return order_provider.updateStatus(id, status)
     },

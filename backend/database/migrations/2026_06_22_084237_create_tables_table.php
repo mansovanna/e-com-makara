@@ -14,8 +14,7 @@ return new class extends Migration
         Schema::create('tables', function (Blueprint $table) {
             $table->id();
             $table->string('table_number');
-            $table->string('qr_code')->nullable();
-            $table->enum('status', ['public', 'private'])->default('private');
+            $table->enum('status', ['available', 'occupied', 'reserved'])->default('available');
             $table->timestamps();
         });
     }

@@ -5,9 +5,13 @@ import IconSearch from '@/components/icons/IconSearch.vue'
 import IconShopping from '@/components/icons/IconShopping.vue'
 import IconSupport from '@/components/icons/IconSupport.vue'
 import IconUser from '@/components/icons/IconUser.vue'
+import { HomeIcon, InvoiceIcon, LogoApp } from '@/stores/icon'
+import { useMyOrders } from '@/stores/my_order'
 import { useShoppStore } from '@/stores/shopp_store'
 import { computed } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
+
+const myOrder = useMyOrders()
 
 const shopStore = useShoppStore()
 
@@ -34,15 +38,17 @@ const computedNotification = computed(() => {
       <div class="w-2/3 max-lg:w-full p-3 flex justify-between items-center">
         <!-- image -->
         <div class="flex justify-start items-center gap-2">
-          <div class="size-10 overflow-clip border border-white rounded-full bg-orange-500">
+          <div
+            class="size-10 overflow-clip object-center object-cover border border-white rounded-full bg-orange-500"
+          >
             <img
-              class="rounded-full"
-              src="https://img.pikbest.com/png-images/20241111/-22creative-food-logo-collection-for-culinary-brands-22_11079861.png!sw800"
+              class="rounded-full object-center object-cover w-full h-full"
+              :src="LogoApp"
               alt=""
             />
           </div>
           <div class="flex justify-start items-center gap-1">
-            <h1 class="font-black text-3xl text-white drop-shadow">Good Food</h1>
+            <h1 class="font-black text-3xl text-white drop-shadow">Food Store</h1>
           </div>
         </div>
         <!-- End Image logo -->
@@ -60,6 +66,21 @@ const computedNotification = computed(() => {
               />
             </div>
             <!-- Block Search -->
+
+            <!-- Block Home -->
+            <div class="relative group">
+              <div
+                class="size-10 bg-white/40 rounded-lg animate-pulse group-hover:scale-105 duration-500 ease-in-out"
+              ></div>
+              <button
+                @click="$router.push({ name: 'home' })"
+                class="absolute top-0 cursor-pointer right-0 bottom-0 left-0 text-white flex justify-center items-center"
+              >
+                <component class="size-5" :is="HomeIcon" />
+              </button>
+              <!-- spn not -->
+            </div>
+            <!-- Block Home -->
 
             <!-- Block notification -->
             <div class="relative group">
@@ -117,6 +138,25 @@ const computedNotification = computed(() => {
               >
             </div>
             <!-- Block Card Favorit -->
+
+            <!-- Block Invoice -->
+            <div class="relative group">
+              <div
+                class="size-10 bg-white/40 rounded-lg animate-pulse group-hover:scale-105 duration-500 ease-in-out"
+              ></div>
+              <button
+                @click="$router.push({ name: 'orders' })"
+                class="absolute top-0 cursor-pointer right-0 bottom-0 left-0 text-white flex justify-center items-center"
+              >
+                <component class="size-5" :is="InvoiceIcon" />
+              </button>
+              <!-- spn not -->
+              <span
+                class="bg-radial bg-red-500 border border-white font-semibold text-white px-1 text-xs font-open-sans rounded-full absolute -top-1 left-5"
+                >{{ myOrder.data?.data.length ?? 0 }}</span
+              >
+            </div>
+            <!-- Block Card Invoice -->
 
             <!-- Block user -->
             <div v-if="false" class="relative group">

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class category extends Model
+class Category extends Model
 {
     //
     protected $table = 'categories';
@@ -25,6 +25,9 @@ class category extends Model
 
     public function foods()
     {
-        return $this->belongsTo(food::class);
+        return $this->belongsTo(Food::class);
     }
+
+
+    // public function foods() { return $this->hasMany(Food::class); }
 }

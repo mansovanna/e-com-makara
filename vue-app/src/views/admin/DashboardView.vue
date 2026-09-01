@@ -12,6 +12,10 @@ import {
   IconArrowRight,
 } from '@tabler/icons-vue'
 
+// ---- Types matching the real API / DB enum (order_items.status) ----
+type ItemStatus = 'pending' | 'preparing' | 'ready' | 'served' | 'cancelled'
+type PaymentStatus = 'unpaid' | 'paid'
+
 interface OrderFood {
   id: number
   name: string
@@ -20,6 +24,7 @@ interface OrderFood {
 interface OrderItem {
   id: number
   food_id: number
+  status: ItemStatus
   quantity: number
   subtotal: string | number
   food: OrderFood
@@ -28,11 +33,10 @@ interface OrderTable {
   id: number
   table_number: string
 }
-type OrderStatus = 'pending' | 'preparing' | 'completed' | 'cancelled'
 interface Order {
   id: number
   order_no: string
-  status: OrderStatus
+  payment_status: PaymentStatus
   payment_method: 'payway' | 'khqr' | 'cash'
   total: string | number
   created_at: string
@@ -49,6 +53,35 @@ onMounted(() => {
 
 const orders = computed<Order[]>(() => orderStore.data ?? [])
 
+// stage order for the active (non-cancelled) workflow
+const stageRank: Record<'pending' | 'preparing' | 'ready' | 'served', number> = {
+  pending: 0,
+  preparing: 1,
+  ready: 2,
+  served: 3,
+}
+const stageOrder: ('pending' | 'preparing' | 'ready' | 'served')[] = [
+  'pending',
+  'preparing',
+  'ready',
+  'served',
+]
+
+// ---- Order's overall status is derived from its items (status lives on
+// each item in the real API, not on the order) ----
+const orderStatus = (order: Order): ItemStatus => {
+  const active = order.items.filter((i) => i.status !== 'cancelled')
+  if (active.length === 0) return 'cancelled'
+  if (active.every((i) => i.status === 'served')) return 'served'
+
+  const minStage = Math.min(
+    ...active.map((i) => stageRank[i.status as keyof typeof stageRank]),
+  )
+  const nextStage = stageOrder[minStage] ?? 'pending'
+
+  return nextStage as ItemStatus
+}
+
 const isToday = (iso: string) => {
   const d = new Date(iso)
   const now = new Date()
@@ -59,16 +92,23 @@ const todayOrders = computed(() => orders.value.filter((o) => isToday(o.created_
 
 const todayRevenue = computed(() =>
   todayOrders.value
-    .filter((o) => o.status !== 'cancelled')
+    .filter((o) => orderStatus(o) !== 'cancelled')
     .reduce((sum, o) => sum + Number(o.total), 0),
 )
 
 const pendingCount = computed(
-  () => orders.value.filter((o) => o.status === 'pending' || o.status === 'preparing').length,
+  () =>
+    orders.value.filter((o) => {
+      const s = orderStatus(o)
+      return s === 'pending' || s === 'preparing' || s === 'ready'
+    }).length,
 )
 
 const occupiedTables = computed(() => {
-  const active = orders.value.filter((o) => o.status !== 'completed' && o.status !== 'cancelled')
+  const active = orders.value.filter((o) => {
+    const s = orderStatus(o)
+    return s !== 'served' && s !== 'cancelled'
+  })
   return new Set(active.map((o) => o.table.table_number)).size
 })
 
@@ -83,7 +123,8 @@ const last7Days = computed(() => {
     const dayTotal = orders.value
       .filter(
         (o) =>
-          new Date(o.created_at).toDateString() === d.toDateString() && o.status !== 'cancelled',
+          new Date(o.created_at).toDateString() === d.toDateString() &&
+          orderStatus(o) !== 'cancelled',
       )
       .reduce((sum, o) => sum + Number(o.total), 0)
     days.push({ label: d.toLocaleDateString('en-US', { weekday: 'short' }), total: dayTotal })
@@ -107,28 +148,30 @@ const recentOrders = computed(() =>
     .slice(0, 5),
 )
 
-const statusStyle: Record<OrderStatus, { bg: string; text: string }> = {
+const statusStyle: Record<ItemStatus, { bg: string; text: string }> = {
   pending: { bg: 'bg-amber-50', text: 'text-amber-700' },
   preparing: { bg: 'bg-blue-50', text: 'text-blue-700' },
-  completed: { bg: 'bg-emerald-50', text: 'text-emerald-700' },
+  ready: { bg: 'bg-violet-50', text: 'text-violet-700' },
+  served: { bg: 'bg-emerald-50', text: 'text-emerald-700' },
   cancelled: { bg: 'bg-rose-50', text: 'text-rose-700' },
 }
-const statusLabel: Record<OrderStatus, string> = {
+const statusLabel: Record<ItemStatus, string> = {
   pending: 'កំពុងរង់ចាំ',
-  preparing: 'កំពុងធ្វើ',
-  completed: 'រួចរាល់',
+  preparing: 'កំពុងចម្អិន',
+  ready: 'រង់ចាំយក',
+  served: 'ដល់ដៃភ្ញៀវ',
   cancelled: 'បានលុប',
 }
 
 const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
 
-// ---- មុខម្ហូបលក់ដាច់ ----
+// ---- មុខម្ហូបលក់ដាច់ (ដក item ដែលត្រូវបានលុបចោលចេញ, មិនមែនទាំង order) ----
 const topFoods = computed(() => {
   const map = new Map<number, { name: string; image: string; qty: number; revenue: number }>()
   for (const order of orders.value) {
-    if (order.status === 'cancelled') continue
     for (const item of order.items) {
+      if (item.status === 'cancelled') continue
       const existing = map.get(item.food_id)
       if (existing) {
         existing.qty += item.quantity
@@ -151,7 +194,7 @@ const maxFoodQty = computed(() => Math.max(...topFoods.value.map((f) => f.qty), 
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 p-6">
+  <div class="min-h-screen bg-slate-50 p-6 font-hanuman">
     <!-- Header -->
     <div class="mb-6">
       <h1 class="text-xl font-bold text-slate-800">ទិដ្ឋភាពទូទៅ</h1>
@@ -292,9 +335,9 @@ const maxFoodQty = computed(() => Math.max(...topFoods.value.map((f) => f.qty), 
           <div class="flex items-center gap-3">
             <span
               class="text-xs font-medium px-2 py-1 rounded-full"
-              :class="[statusStyle[order.status].bg, statusStyle[order.status].text]"
+              :class="[statusStyle[orderStatus(order)].bg, statusStyle[orderStatus(order)].text]"
             >
-              {{ statusLabel[order.status] }}
+              {{ statusLabel[orderStatus(order)] }}
             </span>
             <span class="text-sm font-bold text-slate-800 w-14 text-right">{{
               formatMoney(Number(order.total))

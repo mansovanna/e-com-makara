@@ -38,7 +38,7 @@ const handleDelete = async (productId: number) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+  <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 font-hanuman">
     <!-- Header -->
     <div class="w-full">
       <div class="flex justify-between items-center mb-8">

@@ -12,7 +12,7 @@ const authStore = useAuthStore()
 
 <template>
   <!-- bg-linear-to-r from-indigo-500 from-10% via-sky-500 via-30% to-emerald-500 to-90% -->
-  <div class="w-full p-3 flex justify-end items-center">
+  <div class="w-full p-3 py-2.5 flex justify-end items-center font-hanuman">
     <!-- image -->
 
     <!-- End Image logo -->

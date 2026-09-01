@@ -199,7 +199,7 @@ onMounted(() => {
         v-if="!appStore.isLoadingIndex && !appStore.data?.data.length"
         class="flex justify-center items-center mt-4"
       >
-        <div class="w-20 h-20 p-2 text-orange-500">please create a category</div>
+        <div class="w-20 h-20 p-2 text-orange-500 text-nowrap capitalize">please create a category</div>
       </div>
 
       <div v-if="appStore.isLoadingIndex" class="flex justify-center items-center mt-4">

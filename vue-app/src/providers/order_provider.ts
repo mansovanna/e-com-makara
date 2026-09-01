@@ -31,6 +31,18 @@ class OrderProvider {
   getDash() {
     return api.get('//dashboard/orders')
   }
+
+  updateItemStatus(itemId: number, status: string) {
+    return api.put(`/orders/items/${itemId}`, {
+      status: status,
+    })
+  }
+
+  updatePaymentStatus(orderId: number, status: string) {
+    return api.put(`/orders/${orderId}/payment`, {
+      status: status,
+    })
+  }
 }
 
 export default new OrderProvider()

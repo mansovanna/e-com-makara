@@ -20,12 +20,17 @@ return new class extends Migration {
             $table->foreignId('food_id')
                 ->constrained('foods')
                 ->cascadeOnDelete();
-            $table->integer('quantity');
 
-            $table->decimal('price', 10, 2);
+            $table->enum('status', [
+                'pending',
+                'preparing',
+                'ready',
+                'served',
+                'cancelled',
+            ])->default('pending');
 
-            $table->decimal('subtotal', 10, 2);
-
+            $table->integer('quantity')->default(1);
+            $table->decimal('subtotal', 10, 2)->default(0.00);
             $table->timestamps();
         });
     }

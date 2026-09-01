@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class orders extends Model
+class Orders extends Model
 {
     //
     protected $table = 'orders';
@@ -14,24 +14,24 @@ class orders extends Model
         'table_id',
         'note',
         'payment_method',
-        'status',
-        'discount',
-        'subtotal',
+        'payment_status',
         'total',
-        'coupon_id',
     ];
 
     public function foods()
     {
-        return $this->belongsTo(food::class);
+        return $this->belongsTo(Food::class);
     }
 
-    public function table (){
+    public function table()
+    {
         return $this->belongsTo(Table::class);
     }
 
     public function items()
     {
-        return $this->hasMany(order_item::class, 'order_id');
+        return $this->hasMany(OrderItem::class, 'order_id');
     }
+
+
 }

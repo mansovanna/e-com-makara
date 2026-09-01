@@ -22,7 +22,6 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::delete('/logout', [AuthController::class, 'logout']);
-
     });
     // block Categoris -----------------------------------------------------------
     Route::apiResource('categories', CategoryController::class);
@@ -36,9 +35,14 @@ Route::prefix('v1')->group(function () {
 
     Route::apiResource('orders', OrderController::class);
     Route::post('/check-out', [OrderController::class, 'checkOut']);
+    Route::put('/orders/{order}/payment', [OrderController::class, 'updatePaymentStatus']);
+    Route::put('/orders/items/{id}', [OrderController::class, 'updateItemStatus']);
     Route::post('/verify-transaction', [OrderController::class, 'checkVerify']);
     Route::get('/dashboard/orders', [OrderController::class, 'summary']);
+
     // End Block Oder -----------------------------------------------------------
+
+    Route::get('/my-order-id', [OrderController::class, 'myOrders']);
 });
 
 

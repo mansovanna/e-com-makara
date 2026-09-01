@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\orders;
+use App\Models\Food;
+use App\Models\OrderItem;
+use App\Models\Orders;
 use App\Services\BakongService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use KHQR\Helpers\KHQRData;
+
+use function PHPUnit\Framework\isEmpty;
 
 class OrderController extends Controller
 {
@@ -14,7 +19,7 @@ class OrderController extends Controller
 
     public function index()
     {
-        $data = orders::with(['items.food', 'table'])->orderBy('created_at', 'desc')->get();
+        $data = Orders::with(['items.food', 'table'])->orderBy('created_at', 'desc')->get();
 
         return response()->json($data);
     }
@@ -22,39 +27,51 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'table_id' => 'required|exists:tables,id',
-            'payment_method' => 'required|in:cash,payway',
-            'items' => 'required|array|min:1',
-            'items.*.food_id' => 'required|exists:foods,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.price' => 'required|numeric|min:0',
-            'items.*.subtotal' => 'required|numeric|min:0',
-            'subtotal' => 'required|numeric|min:0',
-            'total' => 'required|numeric|min:0',
-
+            'table_id'            => 'required|exists:tables,id',
+            'payment_method'      => 'required|in:cash,payway',
+            'note'                => 'nullable|string',
+            'items'               => 'required|array|min:1',
+            'items.*.food_id'     => 'required|exists:foods,id',
+            'items.*.quantity'    => 'required|integer|min:1',
         ]);
+        // ចំណាំ: 'total' លែងទទួលពី client ទៀត — គណនាពី server វិញ ដើម្បីកុំឲ្យ client ផ្ញើ total ក្លែងក្លាយ
 
         return DB::transaction(function () use ($validated) {
-            $order = orders::create([
-                'order_no' => 'ORD' . now()->format('YmdHis') . rand(10, 99),
-                'table_id' => $validated['table_id'],
-                'note' => $validated['note'] ?? null,
+            $foodIds = collect($validated['items'])->pluck('food_id');
+            $foods = Food::whereIn('id', $foodIds)->get()->keyBy('id');
+
+            $order = Orders::create([
+                'order_no'       => 'ORD' . now()->format('YmdHis') . rand(10, 99),
+                'table_id'       => $validated['table_id'],
+                'note'           => $validated['note'] ?? null,
                 'payment_method' => $validated['payment_method'],
-                'status' => 'pending',
-                'discount' => $validated['discount'] ?? 0,
-                'subtotal' => $validated['subtotal'] ?? 0,
-                'total' => $validated['total'] ?? 0,
-                'coupon_id' => $validated['coupon_id'] ?? null,
+                'payment_status' => 'unpaid',
+                'total'          => 0
             ]);
 
+            $total = 0;
+
             foreach ($validated['items'] as $item) {
-                $order->items()->create($item);
+                $food = $foods[$item['food_id']];
+                $unitPrice = $food->is_discount && $food->discount_price !== null
+                    ? $food->discount_price
+                    : $food->price;
+                $subtotal = $unitPrice * $item['quantity'];
+                $total += $subtotal;
+
+                $order->items()->create([
+                    'food_id'  => $item['food_id'],
+                    'quantity' => $item['quantity'],
+                    'subtotal' => $subtotal,
+                    'status'   => 'pending',
+                ]);
             }
+
+            $order->update(['total' => $total]);
 
             return response()->json(['order' => $order->load(['items.food', 'table'])], 201);
         });
     }
-
     public function checkOut(Request $request)
     {
         $validated = $request->validate([
@@ -82,8 +99,7 @@ class OrderController extends Controller
             expiresInSeconds: 300,
         );
 
-        // ✅ បន្ថែម deeplink ដោយប្រើ qr string ដែលទើប generate
-        // $data['deeplink'] = $bakong->generateDeepLink($data['qr']);
+
 
         $data['amount'] = $validated['total'];
         $data['currency'] = $currencyLabel;
@@ -173,4 +189,68 @@ class OrderController extends Controller
         ]);
     }
 
+
+
+    public function myOrders(Request $request)
+    {
+        $raw = $request->input('my-order-id');
+        $idList = json_decode($raw, true) ?? [];
+
+        if (empty($idList)) {
+            return response()->json([
+                'message' => 'Order ids are required',
+            ], 422);
+        }
+
+        $orderNos = array_column($idList, 'order_no');
+
+        $orders = orders::whereIn('order_no', $orderNos)
+            ->with(['items.food', 'table'])
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'message' => 'Data retrieved successfully',
+            'data' => $orders,
+        ]);
+    }
+
+
+
+    public function updatePaymentStatus(Request $request, $orderId)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:paid,unpaid',
+        ]);
+
+        $order = Orders::findOrFail($orderId);
+        $order->payment_status = $validated['status'];
+        $order->save();
+
+        return response()->json([
+            'message' => 'Payment status updated successfully',
+            'data' => $order,
+        ]);
+    }
+
+    /**
+     * PUT /orders/items/{itemId}
+     */
+    public function updateItemStatus(Request $request, $id)
+    {
+
+        Log::info('updateItemStatus payload', $request->all());
+        $validated = $request->validate([
+            'status' => 'required|in:pending,preparing,ready,served,cancelled',
+        ]);
+
+        $item = OrderItem::findOrFail($id);
+        $item->status = $validated['status'];
+        $item->save();
+
+        return response()->json([
+            'message' => 'Item status updated successfully',
+            'data' => $item,
+        ]);
+    }
 }

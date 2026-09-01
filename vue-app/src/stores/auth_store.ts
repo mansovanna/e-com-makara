@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import auth_provider from '@/providers/auth_provider'
 import router from '@/router'
 import { defineStore } from 'pinia'
@@ -15,6 +16,7 @@ export const useAuthStore = defineStore('auth', {
       password: '',
     },
     isLoading: false,
+    isMessageError: ''
   }),
   actions: {
     // Email validation helper
@@ -34,8 +36,8 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('token', res.data.token)
         localStorage.setItem('user', JSON.stringify(res.data.user))
         router.push('/admin')
-      } catch (error) {
-        console.log(error)
+      } catch (error:any) {
+         this.isMessageError = error.response?.data?.message
       } finally {
         this.isLoading = false
       }

@@ -1,9 +1,10 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <!-- eslint-disable @typescript-eslint/no-unused-vars -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
-import { BackIcon, CategorisIcon, CloseIcon } from '@/stores/icon'
+import { BackIcon, CategorisIcon, CloseIcon, LoadingIcon } from '@/stores/icon'
 import { useShoppStore } from '@/stores/shopp_store'
 import IconSearch from '@/components/icons/IconSearch.vue'
 import { useTableStore } from '@/stores/table_store'
@@ -69,23 +70,72 @@ const total = computed(() => subtotal.value + deliveryFee)
 onMounted(() => {
   appTable.fetchTables()
 })
+
+const router = useRouter()
+
+interface StoredOrder {
+  id: number
+  order_no: string
+}
+
+const STORAGE_KEY = 'my_orders'
+
+const saveOrderToStorage = (order: StoredOrder) => {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  const list: StoredOrder[] = raw ? JSON.parse(raw) : []
+
+  list.push({ id: order.id, order_no: order.order_no })
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+}
+
+const isLoading = ref(false)
+const isErrorMessage = ref('')
+const success = ref('')
+// --------------- push order --------------------
+const orders = async (data: any) => {
+  isLoading.value = true
+  isErrorMessage.value = ''
+  success.value = ''
+
+  try {
+    const res = await cart.placeOrder(data)
+
+    if (res.status === 200 || res.status === 201) {
+      success.value = 'Order success!'
+
+      const order = res.data.order
+      saveOrderToStorage(order)
+      localStorage.removeItem('cart')
+      cart.products = []
+
+      // redirect ទៅ order confirmation/status page
+      router.push({ name: 'orders' })
+    }
+  } catch (error: any) {
+    console.error(error)
+    isErrorMessage.value = error.response?.data
+  } finally {
+    isLoading.value = false
+  }
+}
 </script>
 
 <template>
   <!-- Block QR Code Sanner Module -->
   <bakong-qr-payment />
   <!-- End Block QR Code Scanner -->
-  <main class="w-full flex flex-col items-center justify-start">
+  <main class="w-full flex flex-col items-center justify-start font-hanuman">
     <div class="w-full max-w-6xl mx-auto py-6 px-4 flex flex-col gap-6">
       <!-- Header -->
       <div class="w-full flex justify-between items-center">
-        <h1 class="text-xl font-semibold text-gray-800">ការទូទាត់</h1>
+        <h1 class="text-xl font-semibold text-gray-800">ព័ត៌មានលម្អិត</h1>
         <button
           @click="$router.push({ name: 'card' })"
           class="px-4 py-2 flex justify-center items-center gap-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 cursor-pointer transition"
         >
           <component :is="BackIcon" />
-          <span>ត្រឡប់ក្រោយ</span>
+          <span>Back</span>
         </button>
       </div>
 
@@ -94,13 +144,13 @@ onMounted(() => {
         <div class="lg:col-span-2 flex flex-col gap-6">
           <!-- Delivery info -->
           <div class="bg-white rounded-lg border border-orange-500 p-5 flex flex-col gap-4">
-            <h3 class="font-semibold text-gray-800 border-b pb-3">ព័ត៌មានដឹកជញ្ជូន</h3>
+            <h3 class="font-semibold text-gray-800 border-b pb-3">ព័ត៌មានកន្លែងអង្គុយ</h3>
 
             <div class="flex flex-col gap-1">
               <!-- Category Field -->
               <div class="relative">
                 <label class="block text-orange-500 font-medium mb-1">
-                  កំណត់សម្គាល់ (ស្រេចចិត្ត) <span class="text-red-600">*</span>
+                  លេខតុរបស់អ្នក <span class="text-red-600">*</span>
                 </label>
                 <div class="relative">
                   <button
@@ -187,37 +237,6 @@ onMounted(() => {
               />
             </div>
           </div>
-
-          <!-- Payment method -->
-          <div class="bg-white rounded-lg border border-orange-400 p-5 flex flex-col gap-4">
-            <h3 class="font-semibold text-gray-800 border-b pb-3">វិធីទូទាត់ប្រាក់</h3>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button
-                @click="cart.paymentMethod = 'cash'"
-                :class="[
-                  'flex flex-col items-center gap-2 border rounded-md py-4 cursor-pointer transition',
-                  cart.paymentMethod === 'cash'
-                    ? 'border-orange-500 bg-orange-50 text-orange-600'
-                    : 'border-gray-200 text-gray-500 hover:border-orange-300',
-                ]"
-              >
-                <span class="font-medium">ទូទាត់ជាសាច់ប្រាក់</span>
-              </button>
-
-              <button
-                @click="cart.paymentMethod = 'payway'"
-                :class="[
-                  'flex flex-col items-center gap-2 border rounded-md py-4 cursor-pointer transition',
-                  cart.paymentMethod === 'payway'
-                    ? 'border-orange-500 bg-orange-50 text-orange-600'
-                    : 'border-gray-200 text-gray-500 hover:border-orange-300',
-                ]"
-              >
-                <span class="font-medium">PayWay</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         <!-- Right: order summary -->
@@ -226,6 +245,12 @@ onMounted(() => {
             class="bg-white rounded-lg border border-orange-400 p-5 flex flex-col gap-4 sticky top-6"
           >
             <h3 class="font-semibold text-gray-800 border-b pb-3">ការកម្មង់របស់អ្នក</h3>
+            <p
+              v-if="isErrorMessage"
+              class="text-red-400 bg-red-500/20 rounded-lg px-3 py-1 capitalize text-xs"
+            >
+              {{ isErrorMessage }}
+            </p>
 
             <div class="flex flex-col gap-3 max-h-64 overflow-y-auto">
               <div
@@ -243,10 +268,7 @@ onMounted(() => {
                 <span>តម្លៃទំនិញ</span>
                 <span>${{ subtotal.toFixed(2) }}</span>
               </div>
-              <div class="flex justify-between text-sm text-gray-600">
-                <span>ថ្លៃដឹកជញ្ជូន</span>
-                <span>${{ deliveryFee.toFixed(2) }}</span>
-              </div>
+
               <div class="flex justify-between font-semibold text-gray-800 border-t pt-2">
                 <span>សរុប</span>
                 <span class="text-orange-500">${{ total.toFixed(2) }}</span>
@@ -255,26 +277,23 @@ onMounted(() => {
 
             <button
               @click="
-                cart.placeOrder(
-                  {
-                    table_id: cart.formData.table_id,
-                    note: form.note,
-                    payment_method: cart.paymentMethod,
-                    items: checkoutItems.map((item) => ({
-                      product_id: item.id,
-                      quantity: item.quantity,
-                      price: item.discount_price ?? item.price,
-                    })),
-                    subtotal: subtotal,
-                    delivery_fee: deliveryFee,
-                    total: total,
-                  },
-                  String(cart.paymentMethod),
-                )
+                orders({
+                  table_id: cart.formData.table_id,
+                  note: form.note,
+                  payment_method: cart.paymentMethod,
+                  items: checkoutItems.map((item) => ({
+                    food_id: item.id,
+                    quantity: item.quantity,
+                  })),
+                })
               "
-              class="w-full py-3 bg-orange-500 text-white rounded-md font-medium hover:bg-orange-600 transition cursor-pointer"
+              class="w-full py-2 bg-orange-500 text-white rounded-md font-medium hover:bg-orange-600 transition cursor-pointer"
             >
-              បញ្ជាទិញឥឡូវនេះ
+              <div v-if="isLoading" class="flex justify-center items-center gap-1">
+                <loading-icon />
+                <span> សូមរងចាំបន្តិច... </span>
+              </div>
+              <span v-else>ដាក់កម្ម៉ង់ឥឡូវនេះ</span>
             </button>
           </div>
         </div>

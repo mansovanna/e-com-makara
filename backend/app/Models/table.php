@@ -7,11 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 class Table extends Model
 {
     //
+
     protected $table = 'tables';
 
     protected $fillable = [
         'table_number',
-        'qr_code',
         'status'
     ];
+
+
+
+    public function orders()
+    {
+        return $this->hasMany(Orders::class);
+    }
 }

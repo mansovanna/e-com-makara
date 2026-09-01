@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class food extends Model
+class Food extends Model
 {
     //
-    protected  $table = 'foods';
+
+     protected  $table = 'foods';
 
     protected $fillable = [
         'category_id',
@@ -24,11 +25,18 @@ class food extends Model
 
     public  function getImageUrlAttribute()
     {
-       return asset($this->image);
+        return asset($this->image);
     }
 
     public function category()
     {
         return $this->belongsTo(category::class);
+    }
+
+
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
     }
 }

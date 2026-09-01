@@ -61,7 +61,7 @@ const favoriteSelected = computed(() => {
       <div class="flex justify-between items-center">
         <p class="text-3xl font-bold text-red-500">${{ prop.data?.price?.toFixed(2) }}</p>
       </div>
-      <p class="text-slate-400 line-clamp-2">{{ prop.data?.description }}</p>
+      <p class="text-slate-400 line-clamp-1 font-hanuman">{{ prop.data?.description }}</p>
       <div class="flex justify-between items-center gap-4 mt-2">
         <button
           @click="handleAddToCart"

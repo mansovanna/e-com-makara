@@ -18,20 +18,19 @@ return new class extends Migration {
             $table->foreignId('table_id')
                 ->constrained('tables')
                 ->cascadeOnDelete();
+
             $table->text('note')->nullable();
-            $table->enum('status', [
-                'pending',
-                'accepted',
-                'preparing',
-                'ready',
-                'completed',
-                'cancelled'
-            ])->default('pending');
+
+            $table->enum('payment_status', [
+                'unpaid',
+                'partial',
+                'paid',
+                'refunded',
+            ])->default('unpaid');
+
             $table->enum('payment_method', ['cash', 'payway'])->default('cash');
-            $table->decimal('subtotal', 10, 2);
-            $table->decimal('discount', 10, 2)->default(0);
+
             $table->decimal('total', 10, 2);
-            $table->foreignId('coupon_id')->nullable();
 
             $table->timestamps();
         });
