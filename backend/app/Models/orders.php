@@ -16,6 +16,16 @@ class Orders extends Model
         'payment_method',
         'payment_status',
         'total',
+        'paid_amount',
+        'change_amount',
+        'paid_at',
+    ];
+
+    protected $casts = [
+        'total' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'change_amount' => 'decimal:2',
+        'paid_at' => 'datetime',
     ];
 
     public function foods()
@@ -32,6 +42,4 @@ class Orders extends Model
     {
         return $this->hasMany(OrderItem::class, 'order_id');
     }
-
-
 }

@@ -219,12 +219,28 @@ class OrderController extends Controller
 
     public function updatePaymentStatus(Request $request, $orderId)
     {
-        $validated = $request->validate([
-            'status' => 'required|in:paid,unpaid',
+        $request->merge([
+            'paid_amount' => $request->paid_amount === '' ? null : $request->paid_amount,
+            'change_amount' => $request->change_amount === '' ? null : $request->change_amount,
         ]);
 
-        $order = Orders::findOrFail($orderId);
+        $validated = $request->validate([
+            'status' => 'required|in:paid,unpaid',
+            'paid_amount' => 'nullable|numeric|min:0',
+            'change_amount' => 'nullable|numeric',
+        ]);
+
+        $order = Orders::with('items')->findOrFail($orderId);
+
+        // Recalculate ឡើងវិញ ដើម្បីប្រាកដថា total ត្រឹមត្រូវមុនពេល record payment
+        // (ករណី item ត្រូវ cancel ក្រោយពេលបង្កើត order តែមុនពេល confirm payment)
+        $order->total = collect($order->items)
+            ->where('status', '!=', 'cancelled')
+            ->sum('subtotal');
+
         $order->payment_status = $validated['status'];
+        $order->paid_amount = $validated['paid_amount'] ?? null;
+        $order->change_amount = $validated['change_amount'] ?? null;
         $order->save();
 
         return response()->json([
@@ -236,21 +252,39 @@ class OrderController extends Controller
     /**
      * PUT /orders/items/{itemId}
      */
-    public function updateItemStatus(Request $request, $id)
-    {
 
-        Log::info('updateItemStatus payload', $request->all());
+
+
+    public function updateItemStatus(Request $request, $itemId)
+    {
         $validated = $request->validate([
             'status' => 'required|in:pending,preparing,ready,served,cancelled',
         ]);
 
-        $item = OrderItem::findOrFail($id);
+        $item = OrderItem::findOrFail($itemId);
         $item->status = $validated['status'];
         $item->save();
+
+        $this->recalculateOrderTotal($item->order_id);
 
         return response()->json([
             'message' => 'Item status updated successfully',
             'data' => $item,
         ]);
+    }
+
+    /**
+     * គណនា orders.total ឡើងវិញ = សរុប subtotal នៃ item ដែលមិនត្រូវ cancel
+     */
+    private function recalculateOrderTotal($orderId): void
+    {
+        $order = Orders::with('items')->findOrFail($orderId);
+
+        $total = collect($order->items)
+            ->where('status', '!=', 'cancelled')
+            ->sum('subtotal');
+
+        $order->total = $total;
+        $order->save();
     }
 }

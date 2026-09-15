@@ -90,12 +90,12 @@ const saveOrderToStorage = (order: StoredOrder) => {
 }
 
 const isLoading = ref(false)
-const isErrorMessage = ref('')
+const isErrorMessage = ref<any>(null)
 const success = ref('')
 // --------------- push order --------------------
 const orders = async (data: any) => {
   isLoading.value = true
-  isErrorMessage.value = ''
+  isErrorMessage.value = null
   success.value = ''
 
   try {
@@ -114,7 +114,7 @@ const orders = async (data: any) => {
     }
   } catch (error: any) {
     console.error(error)
-    isErrorMessage.value = error.response?.data
+    isErrorMessage.value = error.response?.data ?? 'Something went wrong.'
   } finally {
     isLoading.value = false
   }
@@ -135,7 +135,7 @@ const orders = async (data: any) => {
           class="px-4 py-2 flex justify-center items-center gap-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 cursor-pointer transition"
         >
           <component :is="BackIcon" />
-          <span>Back</span>
+          <span>ត្រឡប់ក្រោយ</span>
         </button>
       </div>
 
@@ -249,7 +249,7 @@ const orders = async (data: any) => {
               v-if="isErrorMessage"
               class="text-red-400 bg-red-500/20 rounded-lg px-3 py-1 capitalize text-xs"
             >
-              {{ isErrorMessage }}
+              {{ isErrorMessage.errors?.table_id[0]== 'The table id field is required.'? 'សូមជ្រើរើសលេខតុ':  isErrorMessage.errors}}
             </p>
 
             <div class="flex flex-col gap-3 max-h-64 overflow-y-auto">

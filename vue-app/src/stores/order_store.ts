@@ -33,9 +33,9 @@ export const useOrderStore = defineStore('order', {
       }
     },
 
-     async updatePaymentStatus(orderId: number, status: string) {
+     async updatePaymentStatus(orderId: number, data: FormData) {
       try {
-        const res = await order_provider.updatePaymentStatus(orderId, status)
+        const res = await order_provider.updatePaymentStatus(orderId, data)
         return res.data
       } catch (error: any) {
         console.log(error)

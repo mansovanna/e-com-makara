@@ -48,7 +48,7 @@ const computedNotification = computed(() => {
             />
           </div>
           <div class="flex justify-start items-center gap-1">
-            <h1 class="font-black text-3xl text-white drop-shadow">Food Store</h1>
+            <h1 class="font-black text-3xl text-white drop-shadow">Makara Food Store</h1>
           </div>
         </div>
         <!-- End Image logo -->
@@ -181,50 +181,83 @@ const computedNotification = computed(() => {
     </div>
 
     <footer class="bg-orange-600 text-white mt-10">
-      <div
-        class="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8"
-      >
+      <div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 sm:grid-cols-2 gap-10">
         <!-- Brand -->
         <div>
-          <h2 class="text-2xl font-bold mb-3">Good Food</h2>
+          <div class="flex items-center gap-3 mb-4">
+            <img
+              class="w-12 h-12 rounded-full object-cover border-2 border-white/30"
+              :src="LogoApp"
+              alt="Makra Food Store logo"
+            />
+            <h2 class="text-xl font-bold">Makra Food Store</h2>
+          </div>
           <p class="text-sm text-white/80 leading-relaxed">
-            Delicious food delivered fast and fresh. Enjoy your favorite meals anytime anywhere.
+            ម្ហូបឆ្ងាញ់ដឹកជូនលឿន ស្រស់ថ្មីជានិច្ច។ រីករាយនឹងម្ហូបដែលអ្នកចូលចិត្ត គ្រប់ពេលវេលា
+            គ្រប់ទីកន្លែង។
           </p>
-        </div>
-
-        <!-- Quick Links -->
-        <div>
-          <h3 class="text-lg font-semibold mb-3">Quick Links</h3>
-          <ul class="space-y-2 text-sm text-white/80">
-            <li><RouterLink to="/" class="hover:text-white transition">Home</RouterLink></li>
-            <li><RouterLink to="/menu" class="hover:text-white transition">Menu</RouterLink></li>
-            <li>
-              <RouterLink to="/orders" class="hover:text-white transition">Orders</RouterLink>
-            </li>
-            <li>
-              <RouterLink to="/contact" class="hover:text-white transition">Contact</RouterLink>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Categories -->
-        <div>
-          <h3 class="text-lg font-semibold mb-3">Categories</h3>
-          <ul class="space-y-2 text-sm text-white/80">
-            <li class="hover:text-white transition cursor-pointer">Food</li>
-            <li class="hover:text-white transition cursor-pointer">Rice</li>
-            <li class="hover:text-white transition cursor-pointer">Drinks</li>
-            <li class="hover:text-white transition cursor-pointer">Coffee</li>
-          </ul>
         </div>
 
         <!-- Contact -->
         <div>
-          <h3 class="text-lg font-semibold mb-3">Contact</h3>
-          <ul class="space-y-2 text-sm text-white/80">
-            <li class="hover:text-white transition">📧 support@goodfood.com</li>
-            <li class="hover:text-white transition">📞 +855 123 456 789</li>
-            <li class="hover:text-white transition">📍 Phnom Penh, Cambodia</li>
+          <h3 class="text-lg font-semibold mb-4">Contact</h3>
+          <ul class="space-y-3 text-sm text-white/80">
+            <li class="flex items-center gap-2 hover:text-white transition">
+              <span
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="1em"
+                  height="1em"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M0 0h24v24H0z" fill="none" />
+                  <path
+                    fill="currentColor"
+                    d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2m-.4 4.25l-7.07 4.42c-.32.2-.74.2-1.06 0L4.4 8.25a.85.85 0 1 1 .9-1.44L12 11l6.7-4.19a.85.85 0 1 1 .9 1.44"
+                  />
+                </svg>
+              </span>
+              support@goodfood.com
+            </li>
+            <li class="flex items-center gap-2 hover:text-white transition">
+              <span
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="1em"
+                  height="1em"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M0 0h24v24H0z" fill="none" />
+                  <path
+                    fill="currentColor"
+                    d="M13 8a3 3 0 0 1 3 3a1 1 0 0 0 2 0a5 5 0 0 0-5-5a1 1 0 0 0 0 2"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M13 4a7 7 0 0 1 7 7a1 1 0 0 0 2 0a9 9 0 0 0-9-9a1 1 0 0 0 0 2m8.75 11.91a1 1 0 0 0-.72-.65l-6-1.37a1 1 0 0 0-.92.26c-.14.13-.15.14-.8 1.38a9.9 9.9 0 0 1-4.87-4.89C9.71 10 9.72 10 9.85 9.85a1 1 0 0 0 .26-.92L8.74 3a1 1 0 0 0-.65-.72a4 4 0 0 0-.72-.18A4 4 0 0 0 6.6 2A4.6 4.6 0 0 0 2 6.6A15.42 15.42 0 0 0 17.4 22a4.6 4.6 0 0 0 4.6-4.6a5 5 0 0 0-.06-.76a4.3 4.3 0 0 0-.19-.73"
+                  />
+                </svg>
+              </span>
+              +855 123 456 789
+            </li>
+            <li class="flex items-center gap-2 hover:text-white transition">
+              <span
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="1em"
+                  height="1em"
+                  viewBox="0 0 32 32"
+                >
+                  <path d="M0 0h32v32H0z" fill="none" />
+                  <path
+                    fill="currentColor"
+                    d="M16 2A11.013 11.013 0 0 0 5 13a10.9 10.9 0 0 0 2.216 6.6s.3.395.349.452L16 30l8.439-9.953c.044-.053.345-.447.345-.447l.001-.003A10.9 10.9 0 0 0 27 13A11.013 11.013 0 0 0 16 2m0 15a4 4 0 1 1 4-4a4.005 4.005 0 0 1-4 4"
+                  />
+                  <circle cx="16" cy="13" r="4" fill="none" />
+                </svg>
+              </span>
+              Phnom Penh, Cambodia
+            </li>
           </ul>
         </div>
       </div>
@@ -232,13 +265,14 @@ const computedNotification = computed(() => {
       <!-- Bottom bar -->
       <div class="border-t border-white/20">
         <div
-          class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center text-sm text-white/70"
+          class="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row justify-between items-center gap-3 text-sm text-white/70"
         >
-          <p class="mb-2 md:mb-0">
-            © 2026 <span class="font-semibold text-white">Good Food</span>. All rights reserved.
+          <p>
+            © 2026 <span class="font-semibold text-white">Makara Food Store</span>. All rights
+            reserved.
           </p>
 
-          <div class="flex gap-5">
+          <div class="flex gap-6">
             <a href="#" class="hover:text-white transition">Privacy</a>
             <a href="#" class="hover:text-white transition">Terms</a>
             <a href="#" class="hover:text-white transition">Support</a>

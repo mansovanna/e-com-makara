@@ -7,9 +7,9 @@ import { onMounted } from 'vue'
 
 const myOrders = useMyOrders()
 
-// onMounted(() => {
-//   myOrders.getOrders()
-// })
+onMounted(async () => {
+  await myOrders.getOrders()
+})
 
 const statusLabel: Record<string, string> = {
   pending: 'កំពុងរង់ចាំ',
@@ -50,11 +50,19 @@ const formatDate = (dateStr: string) => {
     minute: '2-digit',
   })
 }
+
+// total/subtotal/paid_amount/change_amount មកពី API ជា string ជានិច្ច (Laravel decimal cast)
+// ត្រូវ Number() មុនពេលប្រើ toFixed()/គណនា
+const formatMoney = (val: string | number | null | undefined) => `$${Number(val ?? 0).toFixed(2)}`
+
+// តម្លៃត្រឹមត្រូវសម្រាប់ display unit price៖ ប្រើ discount_price តែពេល is_discount = 1 ប៉ុណ្ណោះ
+const unitPrice = (food: { price: number; discount_price: number | null; is_discount: number }) =>
+  food.is_discount && food.discount_price != null ? food.discount_price : food.price
 </script>
 
 <template>
   <main class="w-full flex flex-col items-center justify-start font-hanuman">
-    <div class="w-full max-w-4xl mx-auto py-6 px-4 flex flex-col gap-6">
+    <div class="w-full max-w-7xl mx-auto py-6 px-4 flex flex-col gap-6">
       <!-- Header -->
       <div class="w-full flex justify-between items-center">
         <h1 class="text-xl font-semibold text-gray-800">ព័ត៌មានលម្អិតការកម្ម៉ង់</h1>
@@ -63,7 +71,7 @@ const formatDate = (dateStr: string) => {
           class="px-4 py-2 flex justify-center items-center gap-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 cursor-pointer transition"
         >
           <component :is="BackIcon" />
-          <span>Back</span>
+          <span>ត្រឡប់ក្រោយ</span>
         </button>
       </div>
 
@@ -128,12 +136,20 @@ const formatDate = (dateStr: string) => {
                 :src="item.food.image_url"
                 :alt="item.food.name"
                 class="w-14 h-14 rounded-md object-cover border border-gray-200 flex-shrink-0"
+                :class="item.status === 'cancelled' ? 'opacity-40 grayscale' : ''"
               />
 
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-800 truncate">{{ item.food.name }}</p>
+                <p
+                  class="text-sm font-medium text-gray-800 truncate"
+                  :class="item.status === 'cancelled' ? 'line-through text-gray-400' : ''"
+                >
+                  <span class="text-orange-500 font-semibold">{{ item.quantity }}×</span>
+                  {{ item.food.name }}
+                </p>
                 <p class="text-sm text-orange-500 font-semibold">
-                  ${{ (item.food.discount_price ?? item.food.price).toFixed(2) }}
+                  {{ formatMoney(unitPrice(item.food)) }} × {{ item.quantity }} =
+                  {{ formatMoney(item.subtotal) }}
                 </p>
               </div>
 
@@ -152,11 +168,26 @@ const formatDate = (dateStr: string) => {
           </div>
 
           <!-- Total -->
-          <div
-            class="px-5 py-4 bg-orange-50 flex justify-between items-center border-t border-dashed border-orange-200"
-          >
-            <span class="font-medium text-gray-700">សរុប</span>
-            <span class="text-lg font-bold text-orange-600">${{ order.total.toFixed(2) }}</span>
+          <div class="px-5 py-4 bg-orange-50 border-t border-dashed border-orange-200">
+            <div class="flex justify-between items-center">
+              <span class="font-medium text-gray-700">សរុប</span>
+              <span class="text-lg font-bold text-orange-600">{{ formatMoney(order.total) }}</span>
+            </div>
+
+            <!-- បង្ហាញលុយទទួលបាន/លុយអាប ប្រសិនបើបានទូទាត់ជាសាច់ប្រាក់ -->
+            <div
+              v-if="order.payment_status === 'paid' && order.payment_method === 'cash' && order.paid_amount != null"
+              class="mt-2 pt-2 border-t border-dashed border-orange-200 flex flex-col gap-1 text-xs text-gray-500"
+            >
+              <div class="flex justify-between">
+                <span>ទឹកប្រាក់បានបង់</span>
+                <span>{{ formatMoney(order.paid_amount) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>ទឹកប្រាក់បានអាចត្រឡប់មកវិញ</span>
+                <span class="font-medium text-orange-600">{{ formatMoney(order.change_amount) }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

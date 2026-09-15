@@ -1,20 +1,18 @@
 <script setup lang="ts">
-import { DashBoardIcon } from '@/stores/icon'
+import { DashBoardIcon, LogoApp } from '@/stores/icon'
 </script>
 
 <template>
   <div class="w-full flex flex-col justify-between h-screen">
     <div class="py-4">
       <div class="flex flex-col justify-start items-center gap-2">
-        <div class="size-20 overflow-clip border border-white rounded-full bg-orange-500">
-          <img
-            class="rounded-full"
-            src="https://img.pikbest.com/png-images/20241111/-22creative-food-logo-collection-for-culinary-brands-22_11079861.png!sw800"
-            alt=""
-          />
+        <div
+          class="size-20 overflow-clip border-2 flex justify-center items-center border-orange-500 rounded-full bg-orange-500"
+        >
+          <img class="rounded-full size-20 object-center object-cover" :src="LogoApp" alt="" />
         </div>
         <div class="flex justify-start items-center gap-1">
-          <h1 class="font-black text-3xl text-orange-500">Good Food</h1>
+          <h1 class="font-black text-3xl text-orange-500">Makra Food Store</h1>
         </div>
       </div>
       <ul class="w-full p-4 space-y-1">

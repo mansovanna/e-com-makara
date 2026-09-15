@@ -9,12 +9,18 @@ class OrderItem extends Model
     //
 
     protected $table = 'order_items';
+
     protected $fillable = [
         'order_id',
         'food_id',
         'quantity',
         'status',
         'subtotal',
+    ];
+
+    protected $casts = [
+        'quantity' => 'integer',
+        'subtotal' => 'decimal:2',
     ];
 
 

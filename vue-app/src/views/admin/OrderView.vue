@@ -17,6 +17,7 @@ import {
   IconX,
   IconLoader2,
   IconArrowRight,
+  IconWallet,
 } from '@tabler/icons-vue'
 
 // ---- Types matching the real API / DB enum (order_items.status) ----
@@ -62,6 +63,8 @@ interface Order {
   payment_status: PaymentStatus
   payment_method: 'payway' | 'khqr' | 'cash'
   total: string | number
+  paid_amount?: string | number | null
+  change_amount?: string | number | null
   created_at: string
   updated_at: string
   items: OrderItem[]
@@ -176,7 +179,19 @@ const paymentIcon = (method: Order['payment_method']) => {
   return IconCash
 }
 
-const formatMoney = (val: string | number) => `$${Number(val).toFixed(2)}`
+const formatMoney = (val: string | number | null | undefined) => `$${Number(val ?? 0).toFixed(2)}`
+
+// ចំនួនទឹកប្រាក់ពិតប្រាកដដែលអតិថិជនត្រូវបង់ = សរុប subtotal នៃ item ដែលមិនត្រូវបាន cancel
+// (order.total ដែលមកពី backend មិនកាត់ចេញ item ដែល cancel ក្រោយពេលបង្កើត order ទេ)
+const payableTotal = (order: Order) =>
+  order.items
+    .filter((i) => i.status !== 'cancelled')
+    .reduce((sum, i) => sum + Number(i.subtotal), 0)
+
+const cancelledAmount = (order: Order) =>
+  order.items
+    .filter((i) => i.status === 'cancelled')
+    .reduce((sum, i) => sum + Number(i.subtotal), 0)
 
 const formatTime = (iso: string) => {
   const d = new Date(iso)
@@ -233,20 +248,127 @@ const cancelItem = async (item: OrderItem) => {
 // ---- Payment update ----
 const updatingPayment = ref<number | null>(null) // order id currently updating payment
 
-const togglePaymentStatus = async (order: Order, e?: Event) => {
-  e?.stopPropagation()
+// ប្រើសម្រាប់ត្រឡប់ paid -> unpaid ឬបញ្ជាក់ payway/khqr ដោយផ្ទាល់ (គ្មានលុយអាប)
+const togglePaymentStatus = async (
+  order: Order,
+  extra?: { paid_amount?: number; change_amount?: number },
+) => {
   const newStatus: PaymentStatus = order.payment_status === 'unpaid' ? 'paid' : 'unpaid'
   updatingPayment.value = order.id
   updateError.value = null
+
+  const formData = new FormData()
+  formData.append('status', newStatus)
+  formData.append('paid_amount', extra?.paid_amount?.toString() ?? '')
+  formData.append('change_amount', extra?.change_amount?.toString() ?? '')
+
   try {
-    // សន្មតថា store មាន method នេះ — ប្តូរឈ្មោះបើ store ខុសពីនេះ
-    await orderStore.updatePaymentStatus(order.id, newStatus)
+    await orderStore.updatePaymentStatus(order.id, formData)
     order.payment_status = newStatus
+    if (newStatus === 'paid' && extra) {
+      order.paid_amount = extra.paid_amount ?? null
+      order.change_amount = extra.change_amount ?? null
+    }
+    if (newStatus === 'unpaid') {
+      order.paid_amount = null
+      order.change_amount = null
+    }
   } catch (err: any) {
     updateError.value =
       err?.response?.data?.message ?? 'មិនអាចប្តូរការទូទាត់បានទេ សូមព្យាយាមម្តងទៀត'
   } finally {
     updatingPayment.value = null
+  }
+}
+
+// ---- Cash payment confirm modal (amount received / change) ----
+const cashOrder = ref<Order | null>(null)
+const receivedInput = ref<string>('')
+
+// ប្រើ payableTotal (មិនរួមបញ្ចូល item cancel) ជំនួសឲ្យ order.total ដោយផ្ទាល់
+const cashTotal = computed(() => (cashOrder.value ? payableTotal(cashOrder.value) : 0))
+
+const changeAmount = computed(() => {
+  const received = Number(receivedInput.value)
+  if (!receivedInput.value || isNaN(received)) return null
+  return Math.round((received - cashTotal.value) * 100) / 100
+})
+
+const canConfirmCash = computed(() => {
+  const received = Number(receivedInput.value)
+  return receivedInput.value !== '' && !isNaN(received) && received >= cashTotal.value
+})
+
+// បង្កើតជម្រើសលុយឆាប់ៗ (exact + round ឡើងលើ) ដើម្បីចុចលឿន មិនចាំបាច់វាយចំនួនតែងតែ
+const quickAmounts = computed(() => {
+  const total = cashTotal.value
+  if (!total) return []
+  const set = new Set<number>()
+  set.add(Math.round(total * 100) / 100) // ចំនួនពិតប្រាកដ
+  ;[5, 10, 20, 50, 100].forEach((step) => {
+    const rounded = Math.ceil(total / step) * step
+    if (rounded > total) set.add(rounded)
+  })
+  return Array.from(set)
+    .sort((a, b) => a - b)
+    .slice(0, 5)
+})
+
+const openCashConfirm = (order: Order, e?: Event) => {
+  e?.stopPropagation()
+  cashOrder.value = order
+  receivedInput.value = ''
+  updateError.value = null
+}
+
+const closeCashConfirm = () => {
+  cashOrder.value = null
+  receivedInput.value = ''
+}
+
+const confirmCashPayment = async () => {
+  if (!cashOrder.value || !canConfirmCash.value) return
+  const order = cashOrder.value
+  const received = Number(receivedInput.value)
+  // ប្រើ cashTotal (payableTotal ដែលកាត់ចេញ item cancel) មិនមែន order.total ទេ
+  const change = Math.round((received - cashTotal.value) * 100) / 100
+
+  updatingPayment.value = order.id
+  updateError.value = null
+
+  const formData = new FormData()
+  formData.append('status', 'paid')
+  formData.append('paid_amount', received.toString())
+  formData.append('change_amount', change.toString())
+
+  try {
+    await orderStore.updatePaymentStatus(order.id, formData)
+    order.payment_status = 'paid'
+    order.paid_amount = received
+    order.change_amount = change
+    closeCashConfirm()
+  } catch (err: any) {
+    updateError.value =
+      err?.response?.data?.message ?? 'មិនអាចបញ្ជាក់ការទូទាត់បានទេ សូមព្យាយាមម្តងទៀត'
+  } finally {
+    updatingPayment.value = null
+  }
+}
+
+// ចំណុចចូល unified: ប៊ូតុង "សម្គាល់ថាទូទាត់រួច" លើ card និង modal ហៅ function នេះ
+// - unpaid + cash -> បើក form បញ្ចូលលុយទទួលបាន
+// - unpaid + payway/khqr -> បញ្ជាក់ភ្លាមៗ (ចំនួនច្បាស់លាស់ស្រាប់ គ្មានលុយអាប)
+// - paid -> ត្រឡប់ទៅ unpaid វិញ (គ្មានត្រូវការ form)
+const handlePaymentClick = (order: Order, e?: Event) => {
+  e?.stopPropagation()
+  if (order.payment_status === 'paid') {
+    togglePaymentStatus(order)
+    return
+  }
+  if (order.payment_method === 'cash') {
+    openCashConfirm(order, e)
+  } else {
+    togglePaymentStatus(order)
   }
 }
 
@@ -383,7 +505,7 @@ const quickAdvance = async (order: Order, e: Event) => {
               {{ formatTime(order.created_at) }}
             </span>
             <button
-              @click="togglePaymentStatus(order, $event)"
+              @click="handlePaymentClick(order, $event)"
               :disabled="updatingPayment === order.id"
               class="text-left w-fit disabled:opacity-50"
               :class="
@@ -415,7 +537,7 @@ const quickAdvance = async (order: Order, e: Event) => {
             </template>
           </button>
 
-          <span v-else class="font-bold text-slate-800">{{ formatMoney(order.total) }}</span>
+          <span v-else class="font-bold text-slate-800">{{ formatMoney(payableTotal(order)) }}</span>
         </div>
       </div>
     </div>
@@ -505,7 +627,7 @@ const quickAdvance = async (order: Order, e: Event) => {
               >
             </div>
             <button
-              @click="togglePaymentStatus(selectedOrder!)"
+              @click="handlePaymentClick(selectedOrder!)"
               :disabled="updatingPayment === selectedOrder.id"
               class="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-md transition-colors disabled:opacity-50"
               :class="
@@ -530,15 +652,159 @@ const quickAdvance = async (order: Order, e: Event) => {
           </div>
 
           <!-- Total -->
-          <div class="px-5 py-3 flex items-center justify-between">
-            <span class="text-sm text-slate-500">សរុប</span>
-            <span class="text-lg font-bold text-slate-800">{{
-              formatMoney(selectedOrder.total)
-            }}</span>
+          <div class="px-5 py-3">
+            <div v-if="cancelledAmount(selectedOrder) > 0" class="flex items-center justify-between text-xs text-slate-400 mb-1">
+              <span>តម្លៃដើម (រួមទំនិញលុបចោល)</span>
+              <span class="line-through">{{ formatMoney(selectedOrder.total) }}</span>
+            </div>
+            <div v-if="cancelledAmount(selectedOrder) > 0" class="flex items-center justify-between text-xs text-rose-500 mb-1">
+              <span>កាត់ចេញ (ទំនិញលុបចោល)</span>
+              <span>−{{ formatMoney(cancelledAmount(selectedOrder)) }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-slate-500">ត្រូវបង់ជាក់ស្តែង</span>
+              <span class="text-lg font-bold text-slate-800">{{
+                formatMoney(payableTotal(selectedOrder))
+              }}</span>
+            </div>
+
+            <!-- បង្ហាញព័ត៌មានលុយប្រសិនបើបានទូទាត់ជាសាច់ប្រាក់ -->
+            <div
+              v-if="selectedOrder.payment_status === 'paid' && selectedOrder.payment_method === 'cash' && selectedOrder.paid_amount != null"
+              class="mt-2 pt-2 border-t border-dashed border-slate-200 space-y-1"
+            >
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <span>ទទួលបាន</span>
+                <span>{{ formatMoney(selectedOrder.paid_amount) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <span>លុយអាប</span>
+                <span class="font-semibold text-orange-600">{{
+                  formatMoney(selectedOrder.change_amount)
+                }}</span>
+              </div>
+            </div>
           </div>
 
           <div v-if="updateError" class="px-5 pb-4 text-xs text-rose-500">
             {{ updateError }}
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Cash Payment Confirm Modal: បញ្ចូលលុយទទួលបាន + គណនាលុយអាប -->
+    <Teleport to="body">
+      <div
+        v-if="cashOrder"
+        @click.self="closeCashConfirm"
+        class="fixed inset-0 bg-slate-900/40 flex items-center justify-center p-4 z-[60] font-hanuman"
+      >
+        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-xl">
+          <!-- Header -->
+          <div class="bg-orange-500 px-5 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-white">
+              <IconWallet :size="20" />
+              <span class="font-semibold">បញ្ជាក់ការទូទាត់ជាសាច់ប្រាក់</span>
+            </div>
+            <button @click="closeCashConfirm" class="text-white/80 hover:text-white">
+              <IconX :size="20" />
+            </button>
+          </div>
+
+          <div class="px-5 py-4 space-y-4">
+            <!-- Order summary -->
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">តុ {{ cashOrder.table.table_number }} · {{ cashOrder.order_no }}</span>
+            </div>
+            <div v-if="cancelledAmount(cashOrder) > 0" class="flex items-center justify-between text-xs text-rose-500">
+              <span>មិនគិតលុយទំនិញលុបចោល</span>
+              <span>−{{ formatMoney(cancelledAmount(cashOrder)) }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-600">ត្រូវបង់សរុប</span>
+              <span class="text-xl font-bold text-slate-800">{{ formatMoney(cashTotal) }}</span>
+            </div>
+
+            <!-- Quick amount buttons -->
+            <div v-if="quickAmounts.length" class="flex flex-wrap gap-2">
+              <button
+                v-for="amt in quickAmounts"
+                :key="amt"
+                type="button"
+                @click="receivedInput = String(amt)"
+                class="px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors"
+                :class="
+                  Number(receivedInput) === amt
+                    ? 'bg-orange-500 border-orange-500 text-white'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-orange-300'
+                "
+              >
+                {{ formatMoney(amt) }}
+              </button>
+            </div>
+
+            <!-- Amount received input -->
+            <div>
+              <label class="text-sm text-slate-600 mb-1 block">លុយដែលទទួលបានពីភ្ញៀវ</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                <input
+                  v-model="receivedInput"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  class="w-full pl-7 p-2.5 text-lg rounded-md border border-slate-200 focus:outline-orange-500 focus:ring-2 focus:ring-orange-200"
+                  @keyup.enter="canConfirmCash && confirmCashPayment()"
+                />
+              </div>
+            </div>
+
+            <!-- Change display -->
+            <div
+              class="rounded-lg px-4 py-3 flex items-center justify-between"
+              :class="
+                changeAmount === null
+                  ? 'bg-slate-50 text-slate-400'
+                  : changeAmount < 0
+                    ? 'bg-rose-50 text-rose-600'
+                    : 'bg-emerald-50 text-emerald-700'
+              "
+            >
+              <span class="text-sm font-medium">
+                {{ changeAmount !== null && changeAmount < 0 ? 'ខ្វះលុយ' : 'លុយអាបត្រូវដាក់ជូនភ្ញៀវ' }}
+              </span>
+              <span class="text-lg font-bold">
+                {{ changeAmount === null ? '—' : formatMoney(Math.abs(changeAmount)) }}
+              </span>
+            </div>
+
+            <p v-if="updateError" class="text-xs text-rose-500">{{ updateError }}</p>
+
+            <!-- Actions -->
+            <div class="flex gap-2 pt-1">
+              <button
+                type="button"
+                @click="closeCashConfirm"
+                class="flex-1 py-2.5 rounded-md text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200"
+              >
+                បោះបង់
+              </button>
+              <button
+                type="button"
+                :disabled="!canConfirmCash || updatingPayment === cashOrder.id"
+                @click="confirmCashPayment"
+                class="flex-1 py-2.5 rounded-md text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-50 flex items-center justify-center gap-1"
+              >
+                <IconLoader2
+                  v-if="updatingPayment === cashOrder.id"
+                  :size="14"
+                  class="animate-spin"
+                />
+                <template v-else>បញ្ជាក់ការទូទាត់</template>
+              </button>
+            </div>
           </div>
         </div>
       </div>

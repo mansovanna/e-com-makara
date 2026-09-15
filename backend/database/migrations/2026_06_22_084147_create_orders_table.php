@@ -26,11 +26,19 @@ return new class extends Migration {
                 'partial',
                 'paid',
                 'refunded',
-            ])->default('unpaid');
+            ])->default('unpaid')->index();
 
             $table->enum('payment_method', ['cash', 'payway'])->default('cash');
 
             $table->decimal('total', 10, 2);
+
+            $table->decimal('paid_amount', 10, 2)->nullable();
+
+            // លុយអាប = paid_amount - total (គណនានៅ backend ពេលបង់រួច)
+            $table->decimal('change_amount', 10, 2)->nullable();
+
+            // ពេលបង់ប្រាក់ចប់ (null ប្រសិនបើនៅ unpaid)
+            $table->timestamp('paid_at')->nullable();
 
             $table->timestamps();
         });

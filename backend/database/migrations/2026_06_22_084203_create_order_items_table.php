@@ -29,7 +29,7 @@ return new class extends Migration {
                 'cancelled',
             ])->default('pending');
 
-            $table->integer('quantity')->default(1);
+            $table->unsignedInteger('quantity')->default(1);
             $table->decimal('subtotal', 10, 2)->default(0.00);
             $table->timestamps();
         });

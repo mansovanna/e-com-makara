@@ -38,10 +38,8 @@ class OrderProvider {
     })
   }
 
-  updatePaymentStatus(orderId: number, status: string) {
-    return api.put(`/orders/${orderId}/payment`, {
-      status: status,
-    })
+  updatePaymentStatus(orderId: number, data: FormData) {
+    return api.put(`/orders/${orderId}/payment`, data)
   }
 }
 

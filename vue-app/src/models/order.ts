@@ -20,6 +20,8 @@ export interface OrderItem {
   order_id: number
   food_id: number
   status: 'pending' | 'preparing' | 'ready' | 'served' | 'cancelled'
+  quantity: number
+  subtotal: string
   created_at: string
   updated_at: string
   food: Food
@@ -40,7 +42,10 @@ export interface Order {
   note: string | null
   payment_status: 'unpaid' | 'partial' | 'paid' | 'refunded'
   payment_method: 'cash' | 'payway'
-  total: number
+  total: string
+  paid_amount: string | null
+  change_amount: string | null
+  paid_at: string | null
   created_at: string
   updated_at: string
   items: OrderItem[]
